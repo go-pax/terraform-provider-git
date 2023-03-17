@@ -16,6 +16,7 @@ func TestAccConfigMeta(t *testing.T) {
 	})
 
 	t.Run("returns a v4 GraphQL API client to manage individual resources", func(t *testing.T) {
+		testAccPreCheck(t)
 
 		config := Config{
 			Token: testToken,
