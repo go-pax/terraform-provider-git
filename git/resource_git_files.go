@@ -1,8 +1,9 @@
 package git
 
 import (
+	"fmt"
+	"github.com/go-pax/terraform-provider-git/utils/unique"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"io/ioutil"
 	"os"
 	"path"
 )
@@ -10,17 +11,43 @@ import (
 func resourceGitFiles() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"checkout_dir": {
+			/*"checkout_dir": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-			},
-			"path": {
+			},*/
+			"filepath": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 			"contents": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"author": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"branch": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"hostname": {
+				Type:     schema.TypeString,
+				Default:  "github.com",
+				Optional: true,
+				ForceNew: true,
+			},
+			"repository": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -34,12 +61,25 @@ func resourceGitFiles() *schema.Resource {
 }
 
 func fileCreateUpdate(d *schema.ResourceData, meta interface{}) error {
-	checkout_dir := d.Get("checkout_dir").(string)
+	checkout_dir := unique.UniqueId()
 	lockCheckout(checkout_dir)
 	defer unlockCheckout(checkout_dir)
 
-	filepath := d.Get("path").(string)
+	hostname := d.Get("hostname").(string)
+	org := d.Get("organization").(string)
+	branch := d.Get("branch").(string)
+	repo := d.Get("repository").(string)
+	filepath := d.Get("filepath").(string)
 	contents := d.Get("contents").(string)
+
+	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
+
+	var head string
+	var err error
+	if head, err = commands.checkout(checkout_dir, repo, branch); err != nil {
+		return err
+	}
+	println("%s", head)
 
 	if err := os.MkdirAll(path.Dir(path.Join(checkout_dir, filepath)), 0755); err != nil {
 		return err
@@ -52,13 +92,9 @@ func fileCreateUpdate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	hand := handle{
-		kind: "file",
-		hash: hashString(contents),
-		path: filepath,
-	}
+	id := fmt.Sprintf("%d-%s", hashString(contents), filepath)
 
-	d.SetId(hand.String())
+	d.SetId(id)
 	return nil
 }
 
@@ -74,7 +110,7 @@ func fileExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 	var out []byte
 	var err error
-	if out, err = ioutil.ReadFile(path.Join(checkout_dir, filepath)); err != nil {
+	if out, err = os.ReadFile(path.Join(checkout_dir, filepath)); err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
 		} else {

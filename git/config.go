@@ -15,6 +15,7 @@ import (
 type Config struct {
 	Token    string
 	Owner    string
+	Org      string
 	Insecure bool
 }
 
@@ -24,6 +25,7 @@ type Owner struct {
 	client         *githubv4.Client
 	Context        context.Context
 	IsOrganization bool
+	token          string
 }
 
 // Meta returns the meta parameter that is passed into subsequent resources
@@ -44,6 +46,8 @@ func (c *Config) Meta() (interface{}, error) {
 
 	var owner Owner
 	owner.client = qlClient
+
+	owner.token = c.Token
 
 	if c.Anonymous() {
 		log.Printf("[INFO] No token present; configuring anonymous owner.")

@@ -82,6 +82,7 @@ func providerConfigure(p *schema.Provider) schema.ConfigureContextFunc {
 			Token:    token,
 			Insecure: insecure,
 			Owner:    owner,
+			Org:      org,
 		}
 
 		meta, err := config.Meta()
