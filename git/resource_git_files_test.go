@@ -23,8 +23,8 @@ func TestAccGitFileResource(t *testing.T) {
 				organization = "%s"
 				branch = "main-patch"
 				author = {
-					name = "test-bot"
-					email = "12345+test-bot@users.noreply.github.com"
+					name = "trentmillar"
+					email = "1146672+trentmillar@users.noreply.github.com"
 					message = "chore: terraform lifecycle management automated commit"
 				}
 				file {
