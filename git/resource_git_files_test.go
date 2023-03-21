@@ -21,11 +21,16 @@ func TestAccGitFileResource(t *testing.T) {
 				hostname = "github.com"
 				repository = "%s"
 				organization = "%s"
-				branch = "main"
-				author = "test-bot"
-				contents = "hello world"
-				filepath = "files/go/here/hello.txt"
-
+				branch = "main-patch"
+				author = {
+					name = "test-bot"
+					email = "12345+test-bot@users.noreply.github.com"
+					message = "chore: terraform lifecycle management automated commit"
+				}
+				file {
+					contents = "hello world."
+					filepath = "files/go/here/helloworld.txt"
+				}
 			}
 		`, testReleaseRepository, testReleaseOwner)
 

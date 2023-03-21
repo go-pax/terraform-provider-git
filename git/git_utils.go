@@ -9,12 +9,14 @@ import (
 	"strings"
 )
 
-func gitCommand(checkout_dir string, args ...string) ([]byte, error) {
+func gitCommand(cwd string, args ...string) ([]byte, error) {
 	command := exec.Command("git", args...)
-	command.Dir = checkout_dir
+	if cwd != "" {
+		command.Dir = cwd
+	}
 	out, err := command.CombinedOutput()
 	if err != nil {
-		return out, errwrap.Wrapf(fmt.Sprintf("Error while running git %s: {{err}}\nWorking dir: %s\nOutput: %s", strings.Join(args, " "), checkout_dir, string(out)), err)
+		return out, errwrap.Wrapf(fmt.Sprintf("Error while running git %s: {{err}}\nWorking dir: %s\nOutput: %s", strings.Join(args, " "), cwd, string(out)), err)
 	} else {
 		return out, err
 	}

@@ -22,6 +22,16 @@ func NewGitCommands(user string, token string, org string, hostname string) *Git
 	}
 }
 
+func (r *GitCommands) configureAuthor(name string, email string) error {
+	if _, err := gitCommand("", "config", "--global", "user.name", fmt.Sprintf("\"%s\"", name)); err != nil {
+		return err
+	}
+	if _, err := gitCommand("", "config", "--global", "user.email", fmt.Sprintf("\"%s\"", email)); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *GitCommands) checkout(path string, repo string, branch string) (string, error) {
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return "", err
