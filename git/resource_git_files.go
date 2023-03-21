@@ -159,11 +159,6 @@ func fileCreateUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(fmt.Sprintf("%s", sha))
 	return nil
-
-	//id := fmt.Sprintf("%d-%s", hashString(contents), filepath)
-	//
-	//d.SetId(id)
-	//return nil
 }
 
 func fileRead(d *schema.ResourceData, meta interface{}) error {
