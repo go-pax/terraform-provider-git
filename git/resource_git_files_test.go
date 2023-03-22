@@ -9,12 +9,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccGitFileResource(t *testing.T) {
+func TestGitFileResource(t *testing.T) {
 
 	testReleaseRepository := os.Getenv("GITHUB_TEMPLATE_REPOSITORY")
 	testReleaseOwner := testOrganizationFunc()
 
-	t.Run("testing v2 framework", func(t *testing.T) {
+	t.Run("testing git_files resource w/ one file", func(t *testing.T) {
 
 		config := fmt.Sprintf(`
 			provider "git" {}
@@ -56,29 +56,49 @@ func TestAccGitFileResource(t *testing.T) {
 		})
 	})
 
-	/*t.Run("queries latest release", func(t *testing.T) {
+	t.Run("queries latest release", func(t *testing.T) {
 
 		config := fmt.Sprintf(`
-			data "gitfile_release" "test" {
+			provider "git" {}
+			resource "git_files" "test" {
+				hostname = "github.com"
 				repository = "%s"
-				owner = "%s"
-				retrieve_by = "latest"
+				organization = "%s"
+				branch = "main-patch"
+				author = {
+					name = "trentmillar"
+					email = "1146672+trentmillar@users.noreply.github.com"
+					message = "chore: terraform lifecycle management automated commit"
+				}
+				file {
+					contents = "hello world."
+					filepath = "files/test/2.txt"
+				}
+				file {
+					contents = "hello world.\n\t"
+					filepath = "files/test/3.txt"
+				}
 			}
 		`, testReleaseRepository, testReleaseOwner)
 
 		check := resource.ComposeTestCheckFunc(
-			resource.TestCheckResourceAttr(
-				"data.gitfile_release.test", "id", testReleaseID,
-			),
+			func(s *terraform.State) error {
+				rs := s.RootModule().Resources["git_files.test"]
+				att := rs.Primary.Attributes["id"]
+				if att == "" {
+					return fmt.Errorf("expected 'id' to have a value")
+				}
+				return nil
+			},
 		)
 
 		testCase := func(t *testing.T, mode string) {
 			resource.Test(t, resource.TestCase{
+				ProviderFactories: providerFactories,
 				PreCheck: func() {
 					skipUnlessMode(t, mode)
 					testAccPreCheck(t)
 				},
-				Providers: testAccProviders,
 				Steps: []resource.TestStep{
 					{
 						Config: config,
@@ -102,7 +122,7 @@ func TestAccGitFileResource(t *testing.T) {
 
 	})
 
-	t.Run("queries release by ID or tag", func(t *testing.T) {
+	/*t.Run("queries release by ID or tag", func(t *testing.T) {
 
 		config := fmt.Sprintf(`
 			data "gitfile_release" "by_id" {
@@ -276,5 +296,4 @@ func TestAccGitFileResource(t *testing.T) {
 		})
 
 	})*/
-
 }

@@ -54,7 +54,6 @@ func resourceGitFiles() *schema.Resource {
 			"file": {
 				Type:     schema.TypeSet,
 				Required: true,
-				// ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"filepath": {
@@ -256,7 +255,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	if _, err = commands.checkout(checkout_dir, repo, branch); err != nil {
-		return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
+		return diag.Errorf("failed to checkout branch %s: %s", branch, err)
 	}
 
 	files := d.Get("file")
