@@ -64,7 +64,7 @@ func TestGitFileResource(t *testing.T) {
 				hostname = "github.com"
 				repository = "%s"
 				organization = "%s"
-				branch = "main-patch"
+				branch = "main-patch-2"
 				author = {
 					name = "trentmillar"
 					email = "1146672+trentmillar@users.noreply.github.com"
