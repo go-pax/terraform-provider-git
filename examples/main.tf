@@ -31,6 +31,17 @@ locals {
   org    = "test-dump"
   repo   = "test-git-provider"
   branch = format("branch-%s", random_string.test.result)
+
+  files = {
+    01 = {
+      "src/main.hpp" = {
+        contents = "#include <vector>\n#include <cstring>\n"
+      }
+      "src/main.cpp" = {
+        contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\treturn 0;}\n"
+      }
+    }
+  }
 }
 
 resource "github_branch" "test" {
@@ -48,6 +59,13 @@ resource "git_files" "test" {
     email   = "1146672+trentmillar@users.noreply.github.com"
     message = "chore: terraform lifecycle management automated commit"
   }
+  dynamic "file" {
+    for_each = local.files.01[each.key]
+    content {
+      content  = file.value.content
+      filepath = file.value.path
+    }
+  }
   file {
     contents = "hello world."
     filepath = "files/1.txt"
@@ -55,5 +73,9 @@ resource "git_files" "test" {
   file {
     contents = "hello world.\n\t"
     filepath = "files/2"
+  }
+  file {
+    contents = "#include <vector>\n#include <cstring>\n"
+    filepath = "includes/code.h"
   }
 }
