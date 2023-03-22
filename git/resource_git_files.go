@@ -172,7 +172,12 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 			if err := os.Remove(path.Join(checkout_dir, filepath)); err != nil {
 				return diag.Errorf("failed to delete file %s: %s", filepath, err)
 			}
-			updated_files = append(updated_files, filepath)
+
+			if _, err := gitCommand(checkout_dir, "add", "--", filepath); err != nil {
+				return diag.Errorf("failed to rm file in git: %s", filepath)
+			}
+
+			updated_files = append(updated_files, fmt.Sprintf("- %s", filepath))
 		}
 	}
 
@@ -196,7 +201,7 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 				if _, err := gitCommand(checkout_dir, "add", "--", filepath); err != nil {
 					return diag.Errorf("failed to add file to git: %s", filepath)
 				}
-				updated_files = append(updated_files, filepath)
+				updated_files = append(updated_files, fmt.Sprintf("+ %s", filepath))
 				continue
 			}
 			return diag.Errorf("General os error: %s", filepath)
@@ -210,7 +215,7 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 			if _, err := gitCommand(checkout_dir, "add", "--", filepath); err != nil {
 				return diag.Errorf("failed to update file to git: %s", filepath)
 			}
-			updated_files = append(updated_files, filepath)
+			updated_files = append(updated_files, fmt.Sprintf("~ %s", filepath))
 		}
 	}
 
@@ -232,6 +237,7 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 	commit_body := fmt.Sprintf("The following files were updated by terraform:\n%s", strings.Join(updated_files, "\n"))
 	commit_command := flatten("commit", "-m", commit_message, "-m", commit_body, "--allow-empty")
 	commit_command = append(commit_command, commands.getAuthorString(author["name"], author["email"])...)
+	commit_command = append(commit_command, "--")
 	if _, err := gitCommand(checkout_dir, commit_command...); err != nil {
 		return diag.Errorf("failed to commit file(s) to git: %s", err)
 	}

@@ -125,33 +125,14 @@ func TestAccGitFileResource(t *testing.T) {
 
 	t.Run("add files w/ github created branch", func(t *testing.T) {
 
-		testBranch := testHelper.GenerateBranchName()
+		_ = testHelper.GenerateBranchName()
 
 		config := fmt.Sprintf(`
-			terraform {
-			  required_providers {
-				github = {
-				  source  = "integrations/github"
-				  version = "~> 5.0"
-				}
-			  }
-			}
-
-			provider "github" {
-				owner = %[1]s
-				token = %[2]s
-			}
-
-			resource "github_branch" "test" {
-				repository = "%[3]s"
-				branch = "%[4]s"
-			}
-
 			resource "git_files" "test" {
 				hostname = "github.com"
-				repository = "%[3]s"
+				repository = "%[2]s"
 				organization = "%[1]s"
-				branch = github_branch.test.branch
+				branch = "multi-files"
 				author = {
 					name = "trentmillar"
 					email = "1146672+trentmillar@users.noreply.github.com"
@@ -166,7 +147,7 @@ func TestAccGitFileResource(t *testing.T) {
 					filepath = "files/test/3.txt"
 				}
 			}
-		`, testToken, testOwner, testRepository, testBranch)
+		`, testOwner, testRepository)
 
 		check := resource.ComposeTestCheckFunc(
 			resource.TestCheckResourceAttr(
@@ -176,7 +157,7 @@ func TestAccGitFileResource(t *testing.T) {
 				"git_files.test", "repository", testRepository,
 			),
 			resource.TestCheckResourceAttr(
-				"git_files.test", "branch", testBranch,
+				"git_files.test", "branch", "multi-files",
 			),
 		)
 

@@ -33,12 +33,12 @@ locals {
   branch = format("branch-%s", random_string.test.result)
 
   files = {
-    01 = {
+    (local.branch) = {
       "src/main.hpp" = {
         contents = "#include <vector>\n#include <cstring>\n"
       }
       "src/main.cpp" = {
-        contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\treturn 0;}\n"
+        contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\n\treturn 0;\n}\n"
       }
     }
   }
@@ -60,22 +60,10 @@ resource "git_files" "test" {
     message = "chore: terraform lifecycle management automated commit"
   }
   dynamic "file" {
-    for_each = local.files.01[each.key]
+    for_each = local.files[github_branch.test.branch]
     content {
-      content  = file.value.content
-      filepath = file.value.path
+      contents  = file.value.contents
+      filepath = file.key
     }
-  }
-  file {
-    contents = "hello world."
-    filepath = "files/1.txt"
-  }
-  file {
-    contents = "hello world.\n\t"
-    filepath = "files/2"
-  }
-  file {
-    contents = "#include <vector>\n#include <cstring>\n"
-    filepath = "includes/code.h"
   }
 }
