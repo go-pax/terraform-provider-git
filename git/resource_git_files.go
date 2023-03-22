@@ -69,10 +69,6 @@ func resourceGitFiles() *schema.Resource {
 				},
 			},
 		},
-		// Create:        fileCreateUpdate,
-		// Read:          fileRead,
-		// Delete: fileDelete,
-		// Exists:        fileExists,
 		CreateContext: resourceCreate,
 		ReadContext:   resourceRead,
 		UpdateContext: resourceUpdate,
@@ -370,72 +366,5 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 	}
 
 	d.SetId(d.Id())
-	return nil
-}
-
-func fileCreateUpdate(d *schema.ResourceData, meta interface{}) error {
-	hostname := d.Get("hostname").(string)
-	org := d.Get("organization").(string)
-	branch := d.Get("branch").(string)
-	repo := d.Get("repository").(string)
-
-	checkout_dir := unique.UniqueId()
-	lockCheckout(checkout_dir)
-	defer unlockCheckout(checkout_dir)
-
-	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
-
-	a := d.Get("author")
-	author := map_type.ToTypedObject(a.(map[string]interface{}))
-
-	var err error
-	if err = commands.configureAuthor(author["name"], author["email"]); err != nil {
-		return err
-	}
-
-	if _, err = commands.checkout(checkout_dir, repo, branch); err != nil {
-		return err
-	}
-
-	files := d.Get("file")
-	for _, v := range files.(*schema.Set).List() {
-		file := map_type.ToTypedObject(v.(map[string]interface{}))
-		filepath := file["filepath"]
-		contents := file["contents"]
-
-		if err := os.MkdirAll(path.Dir(path.Join(checkout_dir, filepath)), 0755); err != nil {
-			return err
-		}
-		if err := os.WriteFile(path.Join(checkout_dir, filepath), []byte(contents), 0666); err != nil {
-			return err
-		}
-
-		if _, err := gitCommand(checkout_dir, "add", "--", filepath); err != nil {
-			return err
-		}
-
-		commit_message := author["message"]
-		commit_body := fmt.Sprintf("The following files are managed by terraform:\n%s", filepath)
-		if _, err := gitCommand(checkout_dir, flatten("commit", "-m", commit_message, "-m", commit_body, "--allow-empty", "--", filepath)...); err != nil {
-			return err
-		}
-	}
-
-	if _, err := gitCommand(checkout_dir, "push", "origin", "HEAD"); err != nil {
-		return err
-	}
-
-	var sha string
-	if out, err := gitCommand(checkout_dir, "rev-parse", "HEAD"); err != nil {
-		return err
-	} else {
-		sha = strings.TrimRight(string(out), "\n")
-	}
-
-	d.SetId(fmt.Sprintf("%s", sha))
-	return nil
-}
-
-func fileDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
