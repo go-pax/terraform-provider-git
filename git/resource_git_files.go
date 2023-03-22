@@ -81,7 +81,7 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 	branch := d.Get("branch").(string)
 	repo := d.Get("repository").(string)
 
-	checkout_dir := unique.UniqueId()
+	checkout_dir := path.Join(os.TempDir(), unique.UniqueId())
 	lockCheckout(checkout_dir)
 	defer unlockCheckout(checkout_dir)
 
@@ -133,7 +133,7 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 	branch := d.Get("branch").(string)
 	repo := d.Get("repository").(string)
 
-	checkout_dir := unique.UniqueId()
+	checkout_dir := path.Join(os.TempDir(), unique.UniqueId())
 	lockCheckout(checkout_dir)
 	defer unlockCheckout(checkout_dir)
 
@@ -240,7 +240,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{
 	branch := d.Get("branch").(string)
 	repo := d.Get("repository").(string)
 
-	checkout_dir := unique.UniqueId()
+	checkout_dir := path.Join(os.TempDir(), unique.UniqueId())
 	lockCheckout(checkout_dir)
 	defer unlockCheckout(checkout_dir)
 
@@ -303,7 +303,7 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 	branch := d.Get("branch").(string)
 	repo := d.Get("repository").(string)
 
-	checkout_dir := unique.UniqueId()
+	checkout_dir := path.Join(os.TempDir(), unique.UniqueId())
 	lockCheckout(checkout_dir)
 	defer unlockCheckout(checkout_dir)
 
