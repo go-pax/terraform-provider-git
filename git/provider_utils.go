@@ -58,16 +58,16 @@ func testAccPreCheck(t *testing.T) {
 	if v := os.Getenv("GITHUB_ORGANIZATION"); v == "" && os.Getenv("GITHUB_OWNER") == "" {
 		t.Fatal("GITHUB_ORGANIZATION or GITHUB_OWNER must be set for acceptance tests")
 	}
-	//if v := os.Getenv("GITHUB_TEST_USER"); v == "" {
+	// if v := os.Getenv("GITHUB_TEST_USER"); v == "" {
 	//	t.Fatal("GITHUB_TEST_USER must be set for acceptance tests")
-	//}
-	//if v := os.Getenv("GITHUB_TEST_COLLABORATOR"); v == "" {
+	// }
+	// if v := os.Getenv("GITHUB_TEST_COLLABORATOR"); v == "" {
 	//	t.Fatal("GITHUB_TEST_COLLABORATOR must be set for acceptance tests")
-	//}
+	// }
 	if v := os.Getenv("GITHUB_TEMPLATE_REPOSITORY"); v == "" {
 		t.Fatal("GITHUB_TEMPLATE_REPOSITORY must be set for acceptance tests")
 	}
-	if v := os.Getenv("GITHUB_TEMPLATE_REPOSITORY_RELEASE_ID"); v == "" {
-		t.Fatal("GITHUB_TEMPLATE_REPOSITORY_RELEASE_ID must be set for acceptance tests")
-	}
+	// if v := os.Getenv("GITHUB_TEMPLATE_REPOSITORY_RELEASE_ID"); v == "" {
+	// 	t.Fatal("GITHUB_TEMPLATE_REPOSITORY_RELEASE_ID must be set for acceptance tests")
+	// }
 }
