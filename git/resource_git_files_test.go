@@ -17,6 +17,8 @@ func TestAccGitFileResource(t *testing.T) {
 	t.Run("testing v2 framework", func(t *testing.T) {
 
 		config := fmt.Sprintf(`
+			provider "git" {}
+
 			resource "git_files" "test" {
 				hostname = "github.com"
 				repository = "%s"
