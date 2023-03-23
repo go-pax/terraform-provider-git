@@ -26,7 +26,7 @@ func resourceGitFiles() *schema.Resource {
 			"author": {
 				Type:     schema.TypeMap,
 				Required: true,
-				ForceNew: true,
+				// ForceNew: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -202,9 +202,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 					return diag.Errorf("failed to add file to git: %s", filepath)
 				}
 				updated_files = append(updated_files, fmt.Sprintf("+ %s", filepath))
-				continue
 			}
-			return diag.Errorf("General os error: %s", filepath)
+			// return diag.Errorf("General os error: %s", filepath)
+			updated_files = append(updated_files, fmt.Sprintf("? %s", filepath))
+			continue
 		}
 		if string(out) != contents {
 			log.Printf("[INFO] File contents changed: %s", filepath)
@@ -359,7 +360,9 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 				log.Printf("[INFO] Expected file doesn't exist: %s", filepath)
 				is_clean = false
 			}
-			return diag.Errorf("General os error: %s", filepath)
+			is_clean = false
+			log.Printf("[WARN] Expected file missing in branch: %s", filepath)
+			// return diag.Errorf("General os error: %s", filepath)
 		}
 		if string(out) != contents {
 			log.Printf("[INFO] File contents changed: %s", filepath)

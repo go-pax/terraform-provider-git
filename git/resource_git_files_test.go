@@ -129,6 +129,7 @@ func TestAccGitFileResource(t *testing.T) {
 
 		config := fmt.Sprintf(`
 			resource "git_files" "test" {
+				lifecycle { ignore_changes = all }
 				hostname = "github.com"
 				repository = "%[2]s"
 				organization = "%[1]s"
