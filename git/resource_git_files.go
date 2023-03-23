@@ -346,6 +346,7 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 		return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
 	}
 
+	current_files := make(map[string]interface{})
 	files := d.Get("file")
 	is_clean := true
 	for _, v := range files.(*schema.Set).List() {
@@ -367,8 +368,15 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 		if string(out) != contents {
 			log.Printf("[INFO] File contents changed: %s", filepath)
 			is_clean = false
+		} else {
+			current_files[file["key"]] = map[string]interface{}{
+				"filepath": filepath,
+				"contents": contents,
+			}
 		}
 	}
+
+	println(fmt.Sprint(current_files))
 
 	if !is_clean {
 		d.SetId("")
