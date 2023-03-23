@@ -68,6 +68,10 @@ func resourceGitFiles() *schema.Resource {
 					},
 				},
 			},
+			"is_clean": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
 		},
 		CreateContext: resourceCreate,
 		ReadContext:   resourceRead,
@@ -134,6 +138,7 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 	if _, err := gitCommand(checkout_dir, "push", "origin", "HEAD"); err != nil {
 		return diag.Errorf("failed to push commit")
 	}
+	d.Set("is_clean", true)
 	return nil
 }
 
@@ -219,6 +224,8 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 			updated_files = append(updated_files, fmt.Sprintf("~ %s", filepath))
 		}
 	}
+
+	d.Set("is_clean", true)
 
 	if is_clean {
 		var sha string
@@ -320,6 +327,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{
 		sha = strings.TrimRight(string(out), "\n")
 	}
 
+	d.Set("is_clean", true)
 	d.SetId(sha)
 	return nil
 }
@@ -377,9 +385,12 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 	}
 
 	println(fmt.Sprint(current_files))
+	// Current_files needs to become *schema.Set
+	// d.Set("file", current_files)
 
 	if !is_clean {
-		d.SetId("")
+		// d.SetId("")
+		d.Set("is_clean", false)
 		return nil
 	}
 

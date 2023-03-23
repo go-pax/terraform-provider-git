@@ -59,7 +59,6 @@ resource "github_branch" "test" {
 }
 
 resource "git_files" "test" {
-  lifecycle { ignore_changes = all }
   for_each = local.branches
   hostname     = "github.com"
   repository   = local.repo
