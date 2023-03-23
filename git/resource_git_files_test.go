@@ -9,10 +9,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestGitFileResource(t *testing.T) {
+func TestAccGitFileResource(t *testing.T) {
 
-	testReleaseRepository := os.Getenv("GITHUB_TEMPLATE_REPOSITORY")
-	testReleaseOwner := testOrganizationFunc()
+	testRepository := os.Getenv("GITHUB_TEMPLATE_REPOSITORY")
+	testOwner := testOrganizationFunc()
+	testHelper := NewTestHelper()
 
 	t.Run("testing git_files resource w/ one file", func(t *testing.T) {
 
@@ -34,7 +35,7 @@ func TestGitFileResource(t *testing.T) {
 					filepath = "files/go/here/helloworld.txt"
 				}
 			}
-		`, testReleaseRepository, testReleaseOwner)
+		`, testRepository, testOwner)
 
 		resource.UnitTest(t, resource.TestCase{
 			ProviderFactories: providerFactories,
@@ -56,7 +57,7 @@ func TestGitFileResource(t *testing.T) {
 		})
 	})
 
-	t.Run("queries latest release", func(t *testing.T) {
+	t.Run("add multiple files w/ different auth schemes", func(t *testing.T) {
 
 		config := fmt.Sprintf(`
 			provider "git" {}
@@ -64,7 +65,7 @@ func TestGitFileResource(t *testing.T) {
 				hostname = "github.com"
 				repository = "%s"
 				organization = "%s"
-				branch = "main-patch"
+				branch = "main-patch-2"
 				author = {
 					name = "trentmillar"
 					email = "1146672+trentmillar@users.noreply.github.com"
@@ -79,7 +80,7 @@ func TestGitFileResource(t *testing.T) {
 					filepath = "files/test/3.txt"
 				}
 			}
-		`, testReleaseRepository, testReleaseOwner)
+		`, testRepository, testOwner)
 
 		check := resource.ComposeTestCheckFunc(
 			func(s *terraform.State) error {
@@ -122,30 +123,42 @@ func TestGitFileResource(t *testing.T) {
 
 	})
 
-	/*t.Run("queries release by ID or tag", func(t *testing.T) {
+	t.Run("add files w/ github created branch", func(t *testing.T) {
+
+		_ = testHelper.GenerateBranchName()
 
 		config := fmt.Sprintf(`
-			data "gitfile_release" "by_id" {
-				repository = "%[1]s"
-				owner = "%[2]s"
-				retrieve_by = "id"
-				release_id = "%[3]s"
+			resource "git_files" "test" {
+				lifecycle { ignore_changes = all }
+				hostname = "github.com"
+				repository = "%[2]s"
+				organization = "%[1]s"
+				branch = "multi-files"
+				author = {
+					name = "trentmillar"
+					email = "1146672+trentmillar@users.noreply.github.com"
+					message = "chore: terraform lifecycle management automated commit"
+				}
+				file {
+					contents = "hello world."
+					filepath = "files/test/2.txt"
+				}
+				file {
+					contents = "hello world.\n\t"
+					filepath = "files/test/3.txt"
+				}
 			}
-
-			data "gitfile_release" "by_tag" {
-				repository = "%[1]s"
-				owner = "%[2]s"
-				retrieve_by = "tag"
-				release_tag = data.gitfile_release.by_id.release_tag
-			}
-		`, testReleaseRepository, testReleaseOwner, testReleaseID)
+		`, testOwner, testRepository)
 
 		check := resource.ComposeTestCheckFunc(
 			resource.TestCheckResourceAttr(
-				"data.gitfile_release.by_id", "id", testReleaseID,
+				"git_files.test", "organization", testOwner,
 			),
 			resource.TestCheckResourceAttr(
-				"data.gitfile_release.by_tag", "id", testReleaseID,
+				"git_files.test", "repository", testRepository,
+			),
+			resource.TestCheckResourceAttr(
+				"git_files.test", "branch", "multi-files",
 			),
 		)
 
@@ -155,7 +168,7 @@ func TestGitFileResource(t *testing.T) {
 					skipUnlessMode(t, mode)
 					testAccPreCheck(t)
 				},
-				Providers: testAccProviders,
+				ProviderFactories: providerFactories,
 				Steps: []resource.TestStep{
 					{
 						Config: config,
@@ -179,7 +192,7 @@ func TestGitFileResource(t *testing.T) {
 
 	})
 
-	t.Run("errors when querying with non-existent ID", func(t *testing.T) {
+	/*t.Run("errors when querying with non-existent ID", func(t *testing.T) {
 
 		config := `
 			data "gitfile_release" "test" {

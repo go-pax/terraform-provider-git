@@ -32,6 +32,10 @@ func (r *GitCommands) configureAuthor(name string, email string) error {
 	return nil
 }
 
+func (r *GitCommands) getAuthorString(name string, email string) []string {
+	return []string{"--author", fmt.Sprintf("%s <%s>", name, email)}
+}
+
 func (r *GitCommands) checkout(path string, repo string, branch string) (string, error) {
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return "", err

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-pax/terraform-provider-git/utils/map_type"
+	"github.com/go-pax/terraform-provider-git/utils/set"
 	"github.com/go-pax/terraform-provider-git/utils/unique"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -25,7 +26,7 @@ func resourceGitFiles() *schema.Resource {
 			"author": {
 				Type:     schema.TypeMap,
 				Required: true,
-				ForceNew: true,
+				// ForceNew: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -81,24 +82,24 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 	branch := d.Get("branch").(string)
 	repo := d.Get("repository").(string)
 
-	checkout_dir := unique.UniqueId()
+	checkout_dir := path.Join(os.TempDir(), unique.UniqueId())
+	if err := os.MkdirAll(checkout_dir, 0755); err != nil {
+		return diag.Errorf("failed to create git temp dir: %s", err)
+	}
 	lockCheckout(checkout_dir)
-	defer unlockCheckout(checkout_dir)
+	defer func() {
+		unlockCheckout(checkout_dir)
+		_ = os.RemoveAll(checkout_dir)
+	}()
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
 
-	a := d.Get("author")
-	author := map_type.ToTypedObject(a.(map[string]interface{}))
-
 	var err error
-	if err = commands.configureAuthor(author["name"], author["email"]); err != nil {
-		return diag.Errorf("failed to configure author %s: %s", author["name"], author["email"])
-	}
-
 	if _, err = commands.checkout(checkout_dir, repo, branch); err != nil {
 		return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
 	}
 
+	var deleted_files []string
 	files := d.Get("file")
 	is_clean := true
 	for _, v := range files.(*schema.Set).List() {
@@ -108,6 +109,7 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 		if err := os.Remove(path.Join(checkout_dir, filepath)); err != nil {
 			return diag.Errorf("failed to delete file %s: %s", filepath, err)
 		}
+		deleted_files = append(deleted_files, filepath)
 		is_clean = false
 	}
 
@@ -118,9 +120,17 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 	if _, err := gitCommand(checkout_dir, "add", "--", "."); err != nil {
 		return diag.Errorf("failed to add files to git: %s", err)
 	}
-	if _, err := gitCommand(checkout_dir, flatten("commit", "-m", "automated delete", "--allow-empty", "--")...); err != nil {
-		return diag.Errorf("failed to commit to git: %s", err)
+
+	a := d.Get("author")
+	author := map_type.ToTypedObject(a.(map[string]interface{}))
+	commit_message := author["message"]
+	commit_body := fmt.Sprintf("The following files were deleted by terraform:\n%s", strings.Join(deleted_files, "\n"))
+	commit_command := flatten("commit", "-m", commit_message, "-m", commit_body, "--allow-empty")
+	commit_command = append(commit_command, commands.getAuthorString(author["name"], author["email"])...)
+	if _, err := gitCommand(checkout_dir, commit_command...); err != nil {
+		return diag.Errorf("failed to commit file(s) to git: %s", err)
 	}
+
 	if _, err := gitCommand(checkout_dir, "push", "origin", "HEAD"); err != nil {
 		return diag.Errorf("failed to push commit")
 	}
@@ -133,26 +143,25 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 	branch := d.Get("branch").(string)
 	repo := d.Get("repository").(string)
 
-	checkout_dir := unique.UniqueId()
+	checkout_dir := path.Join(os.TempDir(), unique.UniqueId())
+	if err := os.MkdirAll(checkout_dir, 0755); err != nil {
+		return diag.Errorf("failed to create git temp dir: %s", err)
+	}
 	lockCheckout(checkout_dir)
-	defer unlockCheckout(checkout_dir)
+	defer func() {
+		unlockCheckout(checkout_dir)
+		_ = os.RemoveAll(checkout_dir)
+	}()
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
 
-	a := d.Get("author")
-	author := map_type.ToTypedObject(a.(map[string]interface{}))
-
 	var err error
-	if err = commands.configureAuthor(author["name"], author["email"]); err != nil {
-		return diag.Errorf("failed to configure author %s: %s", author["name"], author["email"])
-	}
-
 	if _, err = commands.checkout(checkout_dir, repo, branch); err != nil {
 		return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
 	}
 
 	is_clean := true
-	updated := []string{}
+	var updated_files []string
 	if d.HasChange("file") {
 		files, _ := d.GetChange("file")
 
@@ -163,7 +172,12 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 			if err := os.Remove(path.Join(checkout_dir, filepath)); err != nil {
 				return diag.Errorf("failed to delete file %s: %s", filepath, err)
 			}
-			updated = append(updated, filepath)
+
+			if _, err := gitCommand(checkout_dir, "add", "--", filepath); err != nil {
+				return diag.Errorf("failed to rm file in git: %s", filepath)
+			}
+
+			updated_files = append(updated_files, fmt.Sprintf("- %s", filepath))
 		}
 	}
 
@@ -187,10 +201,11 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 				if _, err := gitCommand(checkout_dir, "add", "--", filepath); err != nil {
 					return diag.Errorf("failed to add file to git: %s", filepath)
 				}
-				updated = append(updated, filepath)
-				continue
+				updated_files = append(updated_files, fmt.Sprintf("+ %s", filepath))
 			}
-			return diag.Errorf("General os error: %s", filepath)
+			// return diag.Errorf("General os error: %s", filepath)
+			updated_files = append(updated_files, fmt.Sprintf("? %s", filepath))
+			continue
 		}
 		if string(out) != contents {
 			log.Printf("[INFO] File contents changed: %s", filepath)
@@ -201,7 +216,7 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 			if _, err := gitCommand(checkout_dir, "add", "--", filepath); err != nil {
 				return diag.Errorf("failed to update file to git: %s", filepath)
 			}
-			updated = append(updated, filepath)
+			updated_files = append(updated_files, fmt.Sprintf("~ %s", filepath))
 		}
 	}
 
@@ -216,11 +231,18 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 		return nil
 	}
 
+	updated_files = set.GetSetFromStringArray(updated_files)
+	a := d.Get("author")
+	author := map_type.ToTypedObject(a.(map[string]interface{}))
 	commit_message := author["message"]
-	commit_body := fmt.Sprintf("The following files are managed by terraform:\n%s", strings.Join(updated, "\n"))
-	if _, err := gitCommand(checkout_dir, flatten("commit", "-m", commit_message, "-m", commit_body, "--allow-empty", "--")...); err != nil {
-		return diag.Errorf("failed to commit to git: %s", err)
+	commit_body := fmt.Sprintf("The following files were updated by terraform:\n%s", strings.Join(updated_files, "\n"))
+	commit_command := flatten("commit", "-m", commit_message, "-m", commit_body, "--allow-empty")
+	commit_command = append(commit_command, commands.getAuthorString(author["name"], author["email"])...)
+	commit_command = append(commit_command, "--")
+	if _, err := gitCommand(checkout_dir, commit_command...); err != nil {
+		return diag.Errorf("failed to commit file(s) to git: %s", err)
 	}
+
 	if _, err := gitCommand(checkout_dir, "push", "origin", "HEAD"); err != nil {
 		return diag.Errorf("failed to push commit")
 	}
@@ -240,24 +262,24 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{
 	branch := d.Get("branch").(string)
 	repo := d.Get("repository").(string)
 
-	checkout_dir := unique.UniqueId()
+	checkout_dir := path.Join(os.TempDir(), unique.UniqueId())
+	if err := os.MkdirAll(checkout_dir, 0755); err != nil {
+		return diag.Errorf("failed to create git temp dir: %s", err)
+	}
 	lockCheckout(checkout_dir)
-	defer unlockCheckout(checkout_dir)
+	defer func() {
+		unlockCheckout(checkout_dir)
+		_ = os.RemoveAll(checkout_dir)
+	}()
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
 
-	a := d.Get("author")
-	author := map_type.ToTypedObject(a.(map[string]interface{}))
-
 	var err error
-	if err = commands.configureAuthor(author["name"], author["email"]); err != nil {
-		return diag.Errorf("failed to configure author %s: %s", author["name"], author["email"])
-	}
-
 	if _, err = commands.checkout(checkout_dir, repo, branch); err != nil {
 		return diag.Errorf("failed to checkout branch %s: %s", branch, err)
 	}
 
+	var added_files []string
 	files := d.Get("file")
 	for _, v := range files.(*schema.Set).List() {
 		file := map_type.ToTypedObject(v.(map[string]interface{}))
@@ -274,12 +296,17 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{
 		if _, err := gitCommand(checkout_dir, "add", "--", filepath); err != nil {
 			return diag.Errorf("failed to add file to git: %s", filepath)
 		}
+		added_files = append(added_files, filepath)
+	}
 
-		commit_message := author["message"]
-		commit_body := fmt.Sprintf("The following files are managed by terraform:\n%s", filepath)
-		if _, err := gitCommand(checkout_dir, flatten("commit", "-m", commit_message, "-m", commit_body, "--allow-empty", "--", filepath)...); err != nil {
-			return diag.Errorf("failed to commit file to git: %s", filepath)
-		}
+	a := d.Get("author")
+	author := map_type.ToTypedObject(a.(map[string]interface{}))
+	commit_message := author["message"]
+	commit_body := fmt.Sprintf("The following files were created by terraform:\n%s", strings.Join(added_files, "\n"))
+	commit_command := flatten("commit", "-m", commit_message, "-m", commit_body, "--allow-empty")
+	commit_command = append(commit_command, commands.getAuthorString(author["name"], author["email"])...)
+	if _, err := gitCommand(checkout_dir, commit_command...); err != nil {
+		return diag.Errorf("failed to commit file(s) to git: %s", err)
 	}
 
 	if _, err := gitCommand(checkout_dir, "push", "origin", "HEAD"); err != nil {
@@ -303,19 +330,17 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 	branch := d.Get("branch").(string)
 	repo := d.Get("repository").(string)
 
-	checkout_dir := unique.UniqueId()
+	checkout_dir := path.Join(os.TempDir(), unique.UniqueId())
+	if err := os.MkdirAll(checkout_dir, 0755); err != nil {
+		return diag.Errorf("failed to create git temp dir: %s", err)
+	}
 	lockCheckout(checkout_dir)
-	defer unlockCheckout(checkout_dir)
+	defer func() {
+		unlockCheckout(checkout_dir)
+		_ = os.RemoveAll(checkout_dir)
+	}()
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
-
-	// a := d.Get("author")
-	// author := map_type.ToTypedObject(a.(map[string]interface{}))
-	//
-	// var err error
-	// if err = commands.configureAuthor(author["name"], author["email"]); err != nil {
-	// 	return false, err
-	// }
 
 	if _, err := commands.checkout(checkout_dir, repo, branch); err != nil {
 		return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
@@ -335,7 +360,9 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 				log.Printf("[INFO] Expected file doesn't exist: %s", filepath)
 				is_clean = false
 			}
-			return diag.Errorf("General os error: %s", filepath)
+			is_clean = false
+			log.Printf("[WARN] Expected file missing in branch: %s", filepath)
+			// return diag.Errorf("General os error: %s", filepath)
 		}
 		if string(out) != contents {
 			log.Printf("[INFO] File contents changed: %s", filepath)

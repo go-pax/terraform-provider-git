@@ -31,3 +31,7 @@ func (t TestHelper) GenerateFile(content string) (*TestFile, error) {
 		Path: file.Name(),
 	}, nil
 }
+
+func (t TestHelper) GenerateBranchName() string {
+	return unique.PrefixedUniqueId("branch_")
+}
