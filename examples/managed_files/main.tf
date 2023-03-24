@@ -25,62 +25,67 @@ locals {
   org    = "test-dump"
   repo   = "test-git-provider"
 
-  branches = {
-    simple_1 = {
+  managed = {
       "src/main.hpp" = {
         contents = "#include <vector>\n#include <cstring>\n"
       }
       "src/main.cpp" = {
         contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\n\treturn 0;\n}\n"
       }
-    }
-    simple_2 = {
-      "src/main.hpp" = {
-        contents = "#include <vector>\n#include <cstring>\n"
-      }
-      "src/main.cpp" = {
-        contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\n\treturn 0;\n}\n"
-      }
-    }
   }
+
+  unmanaged = {
+      "src/main.hpp" = {
+        contents = "#include <vector>\n#include <cstring>\n"
+      }
+      "src/main.cpp" = {
+        contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\n\treturn 0;\n}\n"
+      }
+  }
+
 }
 
-resource "random_string" "test" {
-  for_each = local.branches
-  length  = 10
-  special = false
-  lower   = true
-}
-
-resource "github_branch" "test" {
-  for_each = local.branches
+resource "github_branch" "unmanaged" {
   repository = local.repo
-  branch     = format("%s-%s", each.key, random_string.test[each.key].result)
+  branch     = "unmanaged"
 }
 
-resource "git_files" "test" {
+resource "git_files" "unmanaged" {
   lifecycle {
     ignore_changes = all
   }
   depends_on = [
-    github_branch.test
+    github_branch.unmanaged
+
   ]
-  for_each = local.branches
   hostname     = "github.com"
   repository   = local.repo
   organization = local.org
-  branch       = github_branch.test[each.key].branch
+  branch       = "unmanaged"
   author = {
     name    = "trentmillar"
     email   = "1146672+trentmillar@users.noreply.github.com"
     message = "chore: terraform lifecycle management automated commit"
   }
-  dynamic "file" {
-    for_each = each.value
-    content {
-      contents  = file.value.contents
-      filepath = file.key
-    }
+  file {
+    contents  = "hello world."
+    filepath = "files/hello.txt"
+  }
+}
+
+resource "git_files" "managed" {
+  hostname     = "github.com"
+  repository   = local.repo
+  organization = local.org
+  branch       = "main"
+  author = {
+    name    = "trentmillar"
+    email   = "1146672+trentmillar@users.noreply.github.com"
+    message = "chore: terraform lifecycle management automated commit"
+  }
+  file {
+    contents  = "managed hello world."
+    filepath = "cant_touch_this.txt"
   }
 
 }

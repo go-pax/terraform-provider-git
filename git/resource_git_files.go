@@ -52,6 +52,11 @@ func resourceGitFiles() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"force_new": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 			"file": {
 				Type:     schema.TypeSet,
 				Required: true,
@@ -94,12 +99,12 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
 
-	var err error
-	if _, err := gitCommand(checkout_dir, "rev-parse", "--verify", branch); err != nil {
-		// assume branch was deleted
-		tflog.Warn(ctx, fmt.Sprintf("failed to find remote branch: %s", branch))
-		return nil
-	}
+	// var err error
+	// if _, err := gitCommand(checkout_dir, "rev-parse", "--verify", branch); err != nil {
+	// 	// assume branch was deleted
+	// 	tflog.Warn(ctx, fmt.Sprintf("failed to find remote branch: %s", branch))
+	// 	return nil
+	// }
 
 	_, status, err := commands.checkout(checkout_dir, repo, branch)
 	switch status {
@@ -400,8 +405,14 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 	case Exist:
 		log.Printf("[INFO] branch: %s (HEAD): %s", branch, rev)
 	case NotExist:
+		force := d.Get("force_new").(bool)
 		tflog.Warn(ctx, fmt.Sprintf("failed to find remote branch: %s", branch))
-		d.SetId("")
+		if force {
+			// this will create the resource, ignores ignore_changes
+			d.SetId("")
+		} else {
+			d.SetId("-1")
+		}
 		return nil
 	}
 
