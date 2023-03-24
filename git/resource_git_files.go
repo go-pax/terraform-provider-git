@@ -27,7 +27,6 @@ func resourceGitFiles() *schema.Resource {
 			"author": {
 				Type:     schema.TypeMap,
 				Required: true,
-				// ForceNew: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -68,10 +67,6 @@ func resourceGitFiles() *schema.Resource {
 						},
 					},
 				},
-			},
-			"is_clean": {
-				Type:     schema.TypeBool,
-				Computed: true,
 			},
 		},
 		CreateContext: resourceCreate,
@@ -139,7 +134,6 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 	if _, err := gitCommand(checkout_dir, "push", "origin", "HEAD"); err != nil {
 		return diag.Errorf("failed to push commit")
 	}
-	d.Set("is_clean", true)
 	return nil
 }
 
@@ -225,8 +219,6 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 			updated_files = append(updated_files, fmt.Sprintf("~ %s", filepath))
 		}
 	}
-
-	d.Set("is_clean", true)
 
 	if is_clean {
 		var sha string
@@ -327,8 +319,6 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{
 	} else {
 		sha = strings.TrimRight(string(out), "\n")
 	}
-
-	d.Set("is_clean", true)
 	d.SetId(sha)
 	return nil
 }
@@ -354,12 +344,8 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 	if _, err := commands.checkout(checkout_dir, repo, branch); err != nil {
 		tflog.Warn(ctx, fmt.Sprintf("failed to checkout branch %s: %s", branch, repo))
 		return nil
-		// return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
 	}
 
-	// current_files := make(map[string]interface{})
-
-	// current_files := make([]string, 0)
 	files := d.Get("file")
 	clean_files := d.Get("file")
 	is_clean := true
@@ -385,22 +371,10 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 			is_clean = false
 			clean_files.(*schema.Set).Remove(v)
 		}
-		/*else {
-			current_files = append(current_files, filepath)
-		}*/
 	}
 
-	// println(fmt.Sprint(current_files))
-	// Current_files needs to become *schema.Set
-	// d.Set("file", current_files)
-	// for _, v := range files.(schema.Set). {
-	// 	println(fmt.Sprint(v))
-	// }
-
 	if !is_clean {
-		// d.SetId("")
 		d.Set("file", clean_files)
-		d.Set("is_clean", false)
 		return nil
 	}
 
