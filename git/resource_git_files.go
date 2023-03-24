@@ -99,13 +99,6 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
 
-	// var err error
-	// if _, err := gitCommand(checkout_dir, "rev-parse", "--verify", branch); err != nil {
-	// 	// assume branch was deleted
-	// 	tflog.Warn(ctx, fmt.Sprintf("failed to find remote branch: %s", branch))
-	// 	return nil
-	// }
-
 	_, status, err := commands.checkout(checkout_dir, repo, branch)
 	switch status {
 	case Exist:
@@ -234,7 +227,6 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 				}
 				updated_files = append(updated_files, fmt.Sprintf("+ %s", filepath))
 			}
-			// return diag.Errorf("General os error: %s", filepath)
 			updated_files = append(updated_files, fmt.Sprintf("? %s", filepath))
 			continue
 		}
@@ -380,21 +372,6 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 	}()
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
-	//
-	// exists, _ := commands.exists(checkout_dir, repo, branch)
-	// if !exists {
-	// 	// assume branch was deleted
-	// 	tflog.Warn(ctx, fmt.Sprintf("failed to find remote branch: %s", branch))
-	// 	d.SetId("")
-	// 	return nil
-	// }
-
-	// if _, err := gitCommand(checkout_dir, "rev-parse", "--verify", branch); err != nil {
-	// 	// assume branch was deleted
-	// 	tflog.Warn(ctx, fmt.Sprintf("failed to find remote branch: %s", branch))
-	// 	// d.SetId("")
-	// 	return nil
-	// }
 
 	rev, status, err := commands.checkout(checkout_dir, repo, branch)
 	switch status {
@@ -434,7 +411,6 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 			}
 			is_clean = false
 			log.Printf("[WARN] Expected file missing in branch: %s", filepath)
-			// return diag.Errorf("General os error: %s", filepath)
 		}
 		if string(out) != contents {
 			log.Printf("[INFO] File contents changed: %s", filepath)
@@ -448,23 +424,6 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 		return nil
 	}
 
-	// if out, err := gitCommand(checkout_dir, "rev-parse", "HEAD"); err != nil {
-	// 	return diag.Errorf("Unable to get revision git.")
-	// } else {
-	// 	id := d.Id()
-	// 	log.Printf("[INFO] Remote branch revision: %s", id)
-	//
-	// 	sha := strings.TrimRight(string(out), "\n")
-	// 	log.Printf("[INFO] Local branch revision: %s", sha)
-	//
-	// 	if id != sha {
-	// 		log.Printf("[INFO] Remote revision not the same as local revision: %s", id)
-	// 		d.SetId(sha)
-	// 		return nil
-	// 	}
-	// }
-
-	// process ID
 	current_id := d.Id()
 	log.Printf("[INFO] Current branch revision: %s", current_id)
 	log.Printf("[INFO] Actual branch revision: %s", rev)
