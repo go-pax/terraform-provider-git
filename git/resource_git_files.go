@@ -287,12 +287,6 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
 
 	var err error
-	if _, err := gitCommand(checkout_dir, "rev-parse", "--verify", branch); err != nil {
-		// assume branch was deleted
-		tflog.Warn(ctx, fmt.Sprintf("failed to find remote branch: %s", branch))
-		return nil
-	}
-
 	if _, err = commands.checkout(checkout_dir, repo, branch); err != nil {
 		return diag.Errorf("failed to checkout branch %s: %s", branch, err)
 	}
