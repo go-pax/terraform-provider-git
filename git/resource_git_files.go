@@ -101,8 +101,18 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 		return nil
 	}
 
-	if _, err = commands.checkout(checkout_dir, repo, branch); err != nil {
-		return diag.Errorf("failed to checkout branch %s: %s", branch, err)
+	_, status, err := commands.checkout(checkout_dir, repo, branch)
+	switch status {
+	case Exist:
+		tflog.Info(ctx, "Branch exists for deletion")
+		break
+	case NotExist:
+		tflog.Warn(ctx, fmt.Sprintf("Branch already deleted: %s", branch))
+		return nil
+	case Unknown:
+		if err != nil {
+			return diag.Errorf("failed to checkout branch %s: %s", branch, err)
+		}
 	}
 
 	var deleted_files []string
@@ -168,8 +178,19 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 		return nil
 	}
 
-	if _, err = commands.checkout(checkout_dir, repo, branch); err != nil {
-		return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
+	_, status, err := commands.checkout(checkout_dir, repo, branch)
+	switch status {
+	case NotExist:
+		tflog.Warn(ctx, fmt.Sprintf("Branch not found for update: %s", branch))
+		d.SetId("")
+		return nil
+	case Exist:
+		tflog.Info(ctx, fmt.Sprintf("Branch exists for update: %s", branch))
+		break
+	case Unknown:
+		if err != nil {
+			return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
+		}
 	}
 
 	is_clean := true
@@ -286,9 +307,18 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
 
-	var err error
-	if _, err = commands.checkout(checkout_dir, repo, branch); err != nil {
-		return diag.Errorf("failed to checkout branch %s: %s", branch, err)
+	_, status, err := commands.checkout(checkout_dir, repo, branch)
+	switch status {
+	case NotExist:
+		tflog.Warn(ctx, fmt.Sprintf("Branch not found for create: %s", branch))
+		return diag.Errorf("Branch not found for create %s: %s", branch, repo)
+	case Exist:
+		tflog.Info(ctx, fmt.Sprintf("Branch exists for update: %s", branch))
+		break
+	case Unknown:
+		if err != nil {
+			return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
+		}
 	}
 
 	var added_files []string
@@ -352,15 +382,34 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 	}()
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
+	//
+	// exists, _ := commands.exists(checkout_dir, repo, branch)
+	// if !exists {
+	// 	// assume branch was deleted
+	// 	tflog.Warn(ctx, fmt.Sprintf("failed to find remote branch: %s", branch))
+	// 	d.SetId("")
+	// 	return nil
+	// }
 
-	if _, err := gitCommand(checkout_dir, "rev-parse", "--verify", branch); err != nil {
-		// assume branch was deleted
+	// if _, err := gitCommand(checkout_dir, "rev-parse", "--verify", branch); err != nil {
+	// 	// assume branch was deleted
+	// 	tflog.Warn(ctx, fmt.Sprintf("failed to find remote branch: %s", branch))
+	// 	// d.SetId("")
+	// 	return nil
+	// }
+
+	rev, status, err := commands.checkout(checkout_dir, repo, branch)
+	switch status {
+	case Unknown:
+		if err != nil {
+			return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
+		}
+	case Exist:
+		log.Printf("[INFO] branch: %s (HEAD): %s", branch, rev)
+	case NotExist:
 		tflog.Warn(ctx, fmt.Sprintf("failed to find remote branch: %s", branch))
+		d.SetId("")
 		return nil
-	}
-
-	if _, err := commands.checkout(checkout_dir, repo, branch); err != nil {
-		return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
 	}
 
 	files := d.Get("file")
@@ -395,22 +444,33 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 		return nil
 	}
 
-	if out, err := gitCommand(checkout_dir, "rev-parse", "HEAD"); err != nil {
-		return diag.Errorf("Unable to get revision git.")
-	} else {
-		id := d.Id()
-		log.Printf("[INFO] Remote branch revision: %s", id)
+	// if out, err := gitCommand(checkout_dir, "rev-parse", "HEAD"); err != nil {
+	// 	return diag.Errorf("Unable to get revision git.")
+	// } else {
+	// 	id := d.Id()
+	// 	log.Printf("[INFO] Remote branch revision: %s", id)
+	//
+	// 	sha := strings.TrimRight(string(out), "\n")
+	// 	log.Printf("[INFO] Local branch revision: %s", sha)
+	//
+	// 	if id != sha {
+	// 		log.Printf("[INFO] Remote revision not the same as local revision: %s", id)
+	// 		d.SetId(sha)
+	// 		return nil
+	// 	}
+	// }
 
-		sha := strings.TrimRight(string(out), "\n")
-		log.Printf("[INFO] Local branch revision: %s", sha)
+	// process ID
+	current_id := d.Id()
+	log.Printf("[INFO] Current branch revision: %s", current_id)
+	log.Printf("[INFO] Actual branch revision: %s", rev)
 
-		if id != sha {
-			log.Printf("[INFO] Remote revision not the same as local revision: %s", id)
-			d.SetId(sha)
-			return nil
-		}
+	if current_id != rev {
+		log.Printf("[INFO] Remote revision not the same as local revision: %s <-> %s", rev, current_id)
+		d.SetId(rev)
+		return nil
 	}
 
-	d.SetId(d.Id())
+	d.SetId(current_id)
 	return nil
 }
