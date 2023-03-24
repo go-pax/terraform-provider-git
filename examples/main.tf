@@ -59,6 +59,12 @@ resource "github_branch" "test" {
 }
 
 resource "git_files" "test" {
+  lifecycle {
+    ignore_changes = all
+  }
+  depends_on = [
+    github_branch.test
+  ]
   for_each = local.branches
   hostname     = "github.com"
   repository   = local.repo
@@ -76,4 +82,5 @@ resource "git_files" "test" {
       filepath = file.key
     }
   }
+
 }

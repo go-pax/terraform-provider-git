@@ -6,6 +6,7 @@ import (
 	"github.com/go-pax/terraform-provider-git/utils/map_type"
 	"github.com/go-pax/terraform-provider-git/utils/set"
 	"github.com/go-pax/terraform-provider-git/utils/unique"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
@@ -351,11 +352,16 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
 
 	if _, err := commands.checkout(checkout_dir, repo, branch); err != nil {
-		return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
+		tflog.Warn(ctx, fmt.Sprintf("failed to checkout branch %s: %s", branch, repo))
+		return nil
+		// return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
 	}
 
-	current_files := make(map[string]interface{})
+	// current_files := make(map[string]interface{})
+
+	// current_files := make([]string, 0)
 	files := d.Get("file")
+	clean_files := d.Get("file")
 	is_clean := true
 	for _, v := range files.(*schema.Set).List() {
 		file := map_type.ToTypedObject(v.(map[string]interface{}))
@@ -367,6 +373,7 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 		if out, err = os.ReadFile(path.Join(checkout_dir, filepath)); err != nil {
 			if os.IsNotExist(err) {
 				log.Printf("[INFO] Expected file doesn't exist: %s", filepath)
+				clean_files.(*schema.Set).Remove(v)
 				is_clean = false
 			}
 			is_clean = false
@@ -376,20 +383,23 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 		if string(out) != contents {
 			log.Printf("[INFO] File contents changed: %s", filepath)
 			is_clean = false
-		} else {
-			current_files[file["key"]] = map[string]interface{}{
-				"filepath": filepath,
-				"contents": contents,
-			}
+			clean_files.(*schema.Set).Remove(v)
 		}
+		/*else {
+			current_files = append(current_files, filepath)
+		}*/
 	}
 
-	println(fmt.Sprint(current_files))
+	// println(fmt.Sprint(current_files))
 	// Current_files needs to become *schema.Set
 	// d.Set("file", current_files)
+	// for _, v := range files.(schema.Set). {
+	// 	println(fmt.Sprint(v))
+	// }
 
 	if !is_clean {
 		// d.SetId("")
+		d.Set("file", clean_files)
 		d.Set("is_clean", false)
 		return nil
 	}
