@@ -26,7 +26,7 @@ locals {
   repo   = "test-git-provider"
 
   branches = {
-    branch_1 = {
+    simple_1 = {
       "src/main.hpp" = {
         contents = "#include <vector>\n#include <cstring>\n"
       }
@@ -34,7 +34,7 @@ locals {
         contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\n\treturn 0;\n}\n"
       }
     }
-    branch_2 = {
+    simple_2 = {
       "src/main.hpp" = {
         contents = "#include <vector>\n#include <cstring>\n"
       }
@@ -59,9 +59,6 @@ resource "github_branch" "test" {
 }
 
 resource "git_files" "test" {
-  lifecycle {
-    ignore_changes = all
-  }
   depends_on = [
     github_branch.test
   ]

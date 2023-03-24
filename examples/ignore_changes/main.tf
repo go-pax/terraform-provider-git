@@ -22,24 +22,13 @@ provider "github" {
 }
 
 locals {
-  org    = "test-dump"
-  repo   = "test-git-provider"
+  org  = "test-dump"
+  repo = "test-git-provider"
 
   branches = {
-    branch_1 = {
-      "src/main.hpp" = {
-        contents = "#include <vector>\n#include <cstring>\n"
-      }
-      "src/main.cpp" = {
-        contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\n\treturn 0;\n}\n"
-      }
-    }
-    branch_2 = {
-      "src/main.hpp" = {
-        contents = "#include <vector>\n#include <cstring>\n"
-      }
-      "src/main.cpp" = {
-        contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\n\treturn 0;\n}\n"
+    ignore_changes_1 = {
+      "file" = {
+        contents = "\n\thello world.\n"
       }
     }
   }
@@ -47,13 +36,13 @@ locals {
 
 resource "random_string" "test" {
   for_each = local.branches
-  length  = 10
-  special = false
-  lower   = true
+  length   = 10
+  special  = false
+  lower    = true
 }
 
 resource "github_branch" "test" {
-  for_each = local.branches
+  for_each   = local.branches
   repository = local.repo
   branch     = format("%s-%s", each.key, random_string.test[each.key].result)
 }
@@ -62,10 +51,8 @@ resource "git_files" "test" {
   lifecycle {
     ignore_changes = all
   }
-  depends_on = [
-    github_branch.test
-  ]
-  for_each = local.branches
+
+  for_each     = local.branches
   hostname     = "github.com"
   repository   = local.repo
   organization = local.org
@@ -78,9 +65,8 @@ resource "git_files" "test" {
   dynamic "file" {
     for_each = each.value
     content {
-      contents  = file.value.contents
+      contents = file.value.contents
       filepath = file.key
     }
   }
-
 }
