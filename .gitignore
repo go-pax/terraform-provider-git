@@ -23,14 +23,14 @@ go.work
 # Others 
 .DS_Store
 example.tf
-terraform.tfplan
-terraform.tfstate
+**/terraform.tfplan
+**/terraform.tfstate
+**/*.tfstate*
 bin/
 modules-dev/
 /pkg/
 .vagrant/
 *.backup
-./*.tfstate
 .terraform/
 *.log
 *.bak
