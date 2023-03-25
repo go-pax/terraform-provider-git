@@ -42,6 +42,10 @@ resource "random_string" "test" {
 }
 
 resource "github_branch" "test" {
+  lifecycle {
+    ignore_changes = all
+  }
+
   for_each   = local.branches
   repository = local.repo
   branch     = format("%s-%s", each.key, random_string.test[each.key].result)
@@ -49,14 +53,14 @@ resource "github_branch" "test" {
 
 resource "git_files" "test" {
   lifecycle {
-    ignore_changes = all
+    ignore_changes = [file]
   }
-
   for_each     = local.branches
   hostname     = "github.com"
   repository   = local.repo
   organization = local.org
   branch       = github_branch.test[each.key].branch
+  force_new = false
   author = {
     name    = "trentmillar"
     email   = "1146672+trentmillar@users.noreply.github.com"
