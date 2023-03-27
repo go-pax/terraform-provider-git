@@ -39,13 +39,10 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			//"github_release": resourceGithubRelease(),
 			"git_files": resourceGitFiles(),
 		},
 
-		DataSourcesMap: map[string]*schema.Resource{
-			//"gitfile_release": dataSourceGithubRelease(),
-		},
+		DataSourcesMap: map[string]*schema.Resource{},
 	}
 
 	p.ConfigureContextFunc = providerConfigure(p)
