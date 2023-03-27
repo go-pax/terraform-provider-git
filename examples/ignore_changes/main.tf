@@ -60,7 +60,7 @@ resource "git_files" "test" {
   repository   = local.repo
   organization = local.org
   branch       = github_branch.test[each.key].branch
-  force_new = false
+  force_new    = false
   author = {
     name    = "trentmillar"
     email   = "1146672+trentmillar@users.noreply.github.com"
