@@ -8,6 +8,7 @@ import (
 	"github.com/go-pax/terraform-provider-git/git"
 )
 
+//go:generate terraform fmt -recursive ./examples/
 // Generate the Terraform provider documentation using `tfplugindocs`:
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 

@@ -22,16 +22,16 @@ provider "github" {
 }
 
 locals {
-  org    = "test-dump"
-  repo   = "test-git-provider"
+  org  = "test-dump"
+  repo = "test-git-provider"
 
   unmanaged = {
-      "src/main.hpp" = {
-        contents = "#include <vector>\n#include <cstring>\n"
-      }
-      "src/main.cpp" = {
-        contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\n\treturn 0;\n}\n"
-      }
+    "src/main.hpp" = {
+      contents = "#include <vector>\n#include <cstring>\n"
+    }
+    "src/main.cpp" = {
+      contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\n\treturn 0;\n}\n"
+    }
   }
 
 }
@@ -59,7 +59,7 @@ resource "git_files" "unmanaged" {
     message = "chore: terraform lifecycle management automated commit"
   }
   file {
-    contents  = "hello world."
+    contents = "hello world."
     filepath = "files/hello.txt"
   }
 }
@@ -75,7 +75,7 @@ resource "git_files" "managed" {
     message = "chore: terraform lifecycle management automated commit"
   }
   file {
-    contents  = "managed hello world."
+    contents = "managed hello world."
     filepath = "cant_touch_this.txt"
   }
 

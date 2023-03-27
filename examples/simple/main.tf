@@ -22,8 +22,8 @@ provider "github" {
 }
 
 locals {
-  org    = "test-dump"
-  repo   = "test-git-provider"
+  org  = "test-dump"
+  repo = "test-git-provider"
 
   branches = {
     simple_1 = {
@@ -47,13 +47,13 @@ locals {
 
 resource "random_string" "test" {
   for_each = local.branches
-  length  = 10
-  special = false
-  lower   = true
+  length   = 10
+  special  = false
+  lower    = true
 }
 
 resource "github_branch" "test" {
-  for_each = local.branches
+  for_each   = local.branches
   repository = local.repo
   branch     = format("%s-%s", each.key, random_string.test[each.key].result)
 }
@@ -65,7 +65,7 @@ resource "git_files" "test" {
   depends_on = [
     github_branch.test
   ]
-  for_each = local.branches
+  for_each     = local.branches
   hostname     = "github.com"
   repository   = local.repo
   organization = local.org
@@ -78,7 +78,7 @@ resource "git_files" "test" {
   dynamic "file" {
     for_each = each.value
     content {
-      contents  = file.value.contents
+      contents = file.value.contents
       filepath = file.key
     }
   }
