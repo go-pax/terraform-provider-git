@@ -30,32 +30,39 @@ func resourceGitFiles() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				Description: "`object({ name=string, email=string, message=string })` Defines the commit user and message.",
 			},
 			"branch": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "This is the branch the files will commit into. The branch must exist.",
 			},
 			"hostname": {
-				Type:     schema.TypeString,
-				Default:  "github.com",
-				Optional: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Default:     "github.com",
+				Optional:    true,
+				ForceNew:    true,
+				Description: "Defaults to `github.com` but since this is pure git change to whatever server you are committing into.",
 			},
 			"repository": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "Respository name you want to commit into.",
 			},
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "Sets the organization in git the repository is in.",
 			},
 			"force_new": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
+				Description: "Ensure your files are always pushed into the branch. If the branch is generated in the " +
+					"apply and doesn't exist yet set this to true",
 			},
 			"file": {
 				Type:     schema.TypeSet,
@@ -63,12 +70,14 @@ func resourceGitFiles() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"filepath": {
-							Type:     schema.TypeString,
-							Required: true,
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "Relative path to the file in the targeted repository.",
 						},
 						"contents": {
-							Type:     schema.TypeString,
-							Required: true,
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "String contents of this file. Bested used with templates",
 						},
 					},
 				},

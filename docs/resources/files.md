@@ -17,16 +17,16 @@ description: |-
 
 ### Required
 
-- `author` (Map of String)
-- `branch` (String)
+- `author` (Map of String) `object({ name=string, email=string, message=string })` Defines the commit user and message.
+- `branch` (String) This is the branch the files will commit into. The branch must exist.
 - `file` (Block Set, Min: 1) (see [below for nested schema](#nestedblock--file))
-- `organization` (String)
-- `repository` (String)
+- `organization` (String) Sets the organization in git the repository is in.
+- `repository` (String) Respository name you want to commit into.
 
 ### Optional
 
-- `force_new` (Boolean)
-- `hostname` (String)
+- `force_new` (Boolean) Ensure your files are always pushed into the branch. If the branch is generated in the apply and doesn't exist yet set this to true
+- `hostname` (String) Defaults to `github.com` but since this is pure git change to whatever server you are committing into.
 
 ### Read-Only
 
@@ -37,7 +37,7 @@ description: |-
 
 Required:
 
-- `contents` (String)
-- `filepath` (String)
+- `contents` (String) String contents of this file. Bested used with templates
+- `filepath` (String) Relative path to the file in the targeted repository.
 
 
