@@ -25,15 +25,6 @@ locals {
   org    = "test-dump"
   repo   = "test-git-provider"
 
-  managed = {
-      "src/main.hpp" = {
-        contents = "#include <vector>\n#include <cstring>\n"
-      }
-      "src/main.cpp" = {
-        contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\n\treturn 0;\n}\n"
-      }
-  }
-
   unmanaged = {
       "src/main.hpp" = {
         contents = "#include <vector>\n#include <cstring>\n"
