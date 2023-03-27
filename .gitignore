@@ -46,3 +46,6 @@ modules-dev/
 !command/test-fixtures/**/*.tfstate
 !command/test-fixtures/**/.terraform/
 *.env
+
+*.prv
+*.pub
