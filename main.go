@@ -8,6 +8,9 @@ import (
 	"github.com/go-pax/terraform-provider-git/git"
 )
 
+// Generate the Terraform provider documentation using `tfplugindocs`:
+//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+
 func main() {
 	var debug bool
 
