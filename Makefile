@@ -8,6 +8,9 @@ OS_ARCH=darwin_amd64
 
 default: install
 
+generate: # generate docs
+	go generate .
+
 build:
 	go build -o ${BINARY}
 
