@@ -16,6 +16,7 @@ func Provider() *schema.Provider {
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("GITHUB_TOKEN", nil),
 				Description: descriptions["token"],
+				Sensitive:   true,
 			},
 			"owner": {
 				Type:        schema.TypeString,
@@ -37,11 +38,9 @@ func Provider() *schema.Provider {
 				Description: descriptions["insecure"],
 			},
 		},
-
 		ResourcesMap: map[string]*schema.Resource{
 			"git_files": resourceGitFiles(),
 		},
-
 		DataSourcesMap: map[string]*schema.Resource{},
 	}
 
