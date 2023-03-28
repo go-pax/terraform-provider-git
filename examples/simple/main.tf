@@ -5,8 +5,10 @@ variable "gh_token" {
 terraform {
   required_providers {
     git = {
-      versions = ["0.1"]
-      source   = "github.com/go-pax/git"
+      #      versions = ["0.1"]
+      #      source   = "github.com/go-pax/git"
+      version = "0.1.0"
+      source  = "go-pax/git"
     }
   }
 }
