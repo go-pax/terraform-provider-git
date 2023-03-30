@@ -15,12 +15,6 @@ import (
 	"strings"
 )
 
-type Author struct {
-	name    string
-	email   string
-	message string
-}
-
 func resourceGitFiles() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
