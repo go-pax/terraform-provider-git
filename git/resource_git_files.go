@@ -416,7 +416,6 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 			if os.IsNotExist(err) {
 				log.Printf("[INFO] Expected file doesn't exist: %s", filepath)
 				clean_files.(*schema.Set).Remove(v)
-				is_clean = false
 			}
 			is_clean = false
 			log.Printf("[WARN] Expected file missing in branch: %s", filepath)
@@ -429,7 +428,10 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 	}
 
 	if !is_clean {
-		d.Set("file", clean_files)
+		err := d.Set("file", clean_files)
+		if err != nil {
+			return diag.Errorf("failed to set git files: %s", err)
+		}
 		return nil
 	}
 

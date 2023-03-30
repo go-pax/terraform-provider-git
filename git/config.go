@@ -21,7 +21,6 @@ type Config struct {
 
 type Owner struct {
 	name           string
-	id             int64
 	client         *githubv4.Client
 	Context        context.Context
 	IsOrganization bool
