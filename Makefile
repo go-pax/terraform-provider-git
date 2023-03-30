@@ -18,7 +18,7 @@ lint:
 	golangci-lint --timeout 180s run ./...
 
 generate: # generate docs
-	go generate .
+	go generate ./...
 
 build:
 	go build -o ${BINARY}
