@@ -15,12 +15,6 @@ import (
 	"strings"
 )
 
-type Author struct {
-	name    string
-	email   string
-	message string
-}
-
 func resourceGitFiles() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -112,7 +106,6 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 	switch status {
 	case Exist:
 		tflog.Info(ctx, "Branch exists for deletion")
-		break
 	case NotExist:
 		tflog.Warn(ctx, fmt.Sprintf("Branch already deleted: %s", branch))
 		return nil
@@ -186,7 +179,6 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 		return nil
 	case Exist:
 		tflog.Info(ctx, fmt.Sprintf("Branch exists for update: %s", branch))
-		break
 	case Unknown:
 		if err != nil {
 			return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
@@ -313,7 +305,6 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diag.Errorf("Branch not found for create %s: %s", branch, repo)
 	case Exist:
 		tflog.Info(ctx, fmt.Sprintf("Branch exists for update: %s", branch))
-		break
 	case Unknown:
 		if err != nil {
 			return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
@@ -416,7 +407,6 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 			if os.IsNotExist(err) {
 				log.Printf("[INFO] Expected file doesn't exist: %s", filepath)
 				clean_files.(*schema.Set).Remove(v)
-				is_clean = false
 			}
 			is_clean = false
 			log.Printf("[WARN] Expected file missing in branch: %s", filepath)
@@ -429,7 +419,10 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 	}
 
 	if !is_clean {
-		d.Set("file", clean_files)
+		err := d.Set("file", clean_files)
+		if err != nil {
+			return diag.Errorf("failed to set git files: %s", err)
+		}
 		return nil
 	}
 

@@ -32,7 +32,7 @@ func uuidV4() []byte {
 
 	// Set all the other bits to randomly (or pseudo-randomly) chosen
 	// values.
-	rand.Read(uuid[:])
+	_, _ = rand.Read(uuid[:])
 
 	// Set the two most significant bits (bits 6 and 7) of the
 	// clock_seq_hi_and_reserved to zero and one, respectively.

@@ -6,7 +6,7 @@ func GetSetFromStringArray(a []string) []string {
 		m[v] = true
 	}
 	s := make([]string, 0)
-	for k, _ := range m {
+	for k := range m {
 		s = append(s, k)
 	}
 	return s

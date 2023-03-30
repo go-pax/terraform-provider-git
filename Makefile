@@ -6,13 +6,25 @@ BINARY=terraform-provider-${NAME}
 VERSION=0.1.2
 OS_ARCH=darwin_amd64
 
+.PHONEY: tooling lint generate build release install test testacc build_ci
+
 default: install
+
+tooling:
+	sudo curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b $(go env GOPATH)/bin v1.52.2
+	golangci-lint --version
+
+lint:
+	golangci-lint run ./...
 
 generate: # generate docs
 	go generate .
 
 build:
 	go build -o ${BINARY}
+
+build_ci:
+	go build ./...
 
 release:
 	GOOS=darwin GOARCH=amd64 go build -o ./bin/${BINARY}_${VERSION}_darwin_amd64
