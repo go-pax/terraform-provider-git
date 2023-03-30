@@ -15,7 +15,7 @@ tooling:
 	golangci-lint --version
 
 lint:
-	golangci-lint run ./...
+	golangci-lint --timeout 180s run ./...
 
 generate: # generate docs
 	go generate .
