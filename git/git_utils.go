@@ -3,7 +3,6 @@ package git
 import (
 	"fmt"
 	"github.com/go-pax/terraform-provider-git/utils/mutexkv"
-	"github.com/hashicorp/errwrap"
 	"os/exec"
 	"strings"
 )
@@ -15,7 +14,7 @@ func gitCommand(cwd string, args ...string) ([]byte, error) {
 	}
 	out, err := command.CombinedOutput()
 	if err != nil {
-		return out, errwrap.Wrapf(fmt.Sprintf("Error while running git %s: {{err}}\nWorking dir: %s\nOutput: %s", strings.Join(args, " "), cwd, string(out)), err)
+		return out, fmt.Errorf("Error while running git %[1]s: %[4]w\nWorking dir: %[2]s\nOutput: %[3]s", strings.Join(args, " "), cwd, string(out), err)
 	} else {
 		return out, err
 	}

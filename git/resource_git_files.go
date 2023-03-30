@@ -106,7 +106,6 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 	switch status {
 	case Exist:
 		tflog.Info(ctx, "Branch exists for deletion")
-		break
 	case NotExist:
 		tflog.Warn(ctx, fmt.Sprintf("Branch already deleted: %s", branch))
 		return nil
@@ -180,7 +179,6 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 		return nil
 	case Exist:
 		tflog.Info(ctx, fmt.Sprintf("Branch exists for update: %s", branch))
-		break
 	case Unknown:
 		if err != nil {
 			return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
@@ -307,7 +305,6 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diag.Errorf("Branch not found for create %s: %s", branch, repo)
 	case Exist:
 		tflog.Info(ctx, fmt.Sprintf("Branch exists for update: %s", branch))
-		break
 	case Unknown:
 		if err != nil {
 			return diag.Errorf("failed to checkout branch %s: %s", branch, repo)
