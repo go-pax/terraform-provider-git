@@ -35,5 +35,8 @@ provider "git" {
 
 - `insecure` (Boolean) Enable `insecure` mode for testing purposes
 - `organization` (String, Deprecated) The GitHub organization name to manage. Use this field instead of `owner` when managing organization accounts.
+  This will use the value in the environment variable __GITHUB_ORGANIZATION__ if set.
 - `owner` (String) The GitHub owner name to manage. Use this field instead of `organization` when managing individual accounts.
-- `token` (String, Sensitive) The PAT used to connect to GitHub. Anonymous mode is enabled if `token` is not set.
+  This will use the value in the environment variable __GITHUB_OWNER__ if set.
+- `token` (String, Sensitive) The PAT used to connect to GitHub. Anonymous mode is enabled if `token` is not set. 
+This will use the value in the environment variable __GITHUB_TOKEN__ if set.
