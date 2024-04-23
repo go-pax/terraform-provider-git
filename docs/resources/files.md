@@ -128,5 +128,3 @@ Required:
 
 - `contents` (String) String contents of this file. Bested used with templates
 - `filepath` (String) Relative path to the file in the targeted repository.
-
-
