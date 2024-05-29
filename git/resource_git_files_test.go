@@ -9,11 +9,59 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
+// TestAccGitFileResource tests the behavior of the git_files resource when creating files in different scenarios.
+// The function runs a series of sub-tests to cover the different test cases.
 func TestAccGitFileResource(t *testing.T) {
 
 	testRepository := os.Getenv("GITHUB_TEMPLATE_REPOSITORY")
 	testOwner := testOrganizationFunc()
 	testHelper := NewTestHelper()
+
+	/*t.Run("testing git_files resource in Azure DevOps w/ one file", func(t *testing.T) {
+
+		config := fmt.Sprintf(`
+			provider "git" {
+				owner = "%[1]s"
+				token = "%[2]s"
+			}
+
+			resource "git_files" "test" {
+				hostname = "dev.azure.com"
+				project = "%[3]s"
+				organization = "%[1]s"
+				branch = "%[4]s-branch"
+				repository = "%[4]s"
+				author = {
+					name = "trentmillar"
+					email = "1146672+trentmillar@users.noreply.github.com"
+					message = "chore: terraform lifecycle management automated commit"
+				}
+				file {
+					contents = "hello world."
+					filepath = "files/go/here/helloworld.txt"
+				}
+			}
+		`, "YOUR ORG IN AZDO", "PAT", "PROJECT", "REPO NAME")
+
+		resource.UnitTest(t, resource.TestCase{
+			ProviderFactories: providerFactories,
+			Steps: []resource.TestStep{
+				{
+					Config: config,
+					Check: resource.ComposeTestCheckFunc(
+						func(s *terraform.State) error {
+							rs := s.RootModule().Resources["git_files.test"]
+							att := rs.Primary.Attributes["id"]
+							if att == "" {
+								return fmt.Errorf("expected 'id' to have a value")
+							}
+							return nil
+						},
+					),
+				},
+			},
+		})
+	})*/
 
 	t.Run("testing git_files resource w/ one file", func(t *testing.T) {
 
