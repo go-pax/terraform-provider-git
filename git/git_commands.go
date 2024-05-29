@@ -34,14 +34,19 @@ func (r *GitCommands) getAuthorString(name string, email string) []string {
 	return []string{"--author", fmt.Sprintf("%s <%s>", name, email)}
 }
 
-func (r *GitCommands) checkout(path string, repo string, branch string) (string, BranchStatus, error) {
+func (r *GitCommands) checkout(path string, repo string, branch string, project string) (string, BranchStatus, error) {
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return "", Unknown, err
 	}
 
 	// May already be checked out from another project
 	if _, err := os.Stat(fmt.Sprintf("%s/.git", path)); err != nil {
-		full_repo_arg := fmt.Sprintf("https://%s:%s@%s/%s/%s", r.user, r.token, r.hostname, r.organization, repo)
+		full_repo_arg := ""
+		if project != "" {
+			full_repo_arg = fmt.Sprintf("https://%s:%s@%s/%s/%s/_git/%s", r.user, r.token, r.hostname, r.organization, project, repo)
+		} else {
+			full_repo_arg = fmt.Sprintf("https://%s:%s@%s/%s/%s", r.user, r.token, r.hostname, r.organization, repo)
+		}
 		if _, err := gitCommand(path, "clone", "--", full_repo_arg, "."); err != nil {
 			return "", Unknown, err
 		}
