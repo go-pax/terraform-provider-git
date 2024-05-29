@@ -52,9 +52,7 @@ resource "git_files" "test" {
     filepath = "src/main.cpp"
   }
 }
-```
 
-```terraform
 ## Azure DevOps example usage
 
 variable "azdo_token" {
@@ -71,7 +69,7 @@ terraform {
 }
 
 provider "git" {
-  owner   = "my-azdo-organization" 
+  owner   = "my-azdo-organization"
   token   = var.azdo_token
 }
 
@@ -95,9 +93,7 @@ resource "git_files" "test" {
     filepath = "src/main.cpp"
   }
 }
-```
 
-```terraform
 ## Bitbucket Server example usage
 
 # This provider whilst it is targetted at Github as it stands you *can* use it with Bitbucket server, see below example to make this work. The key is to replace the org with the relevant path as below:
@@ -160,6 +156,7 @@ resource "git_files" "this" {
 
 - `force_new` (Boolean) Ensure your files are always pushed into the branch. If the branch is generated in the apply and doesn't exist yet set this to true
 - `hostname` (String) Defaults to `github.com` but since this is pure git change to whatever server you are committing into.
+- `project` (String) Sets the AzureDevOps Project where the repository is in. Only needed if using AzDO repos
 
 ### Read-Only
 
