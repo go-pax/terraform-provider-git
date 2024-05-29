@@ -52,8 +52,52 @@ resource "git_files" "test" {
     filepath = "src/main.cpp"
   }
 }
+```
 
+```terraform
+## Azure DevOps example usage
 
+variable "azdo_token" {
+  type = string
+}
+
+terraform {
+  required_providers {
+    git = {
+      version = "~> 0.1"
+      source  = "go-pax/git"
+    }
+  }
+}
+
+provider "git" {
+  owner   = "my-azdo-organization" 
+  token   = var.azdo_token
+}
+
+resource "git_files" "test" {
+  hostname     = "dev.azure.com"
+  repository   = "test-git-provider"
+  organization = "my-azdo-organization"
+  project      = "project-in-azdo"
+  branch       = "branch_1"
+  author = {
+    name    = "username"
+    email   = "1146672+username@users.noreply.github.com"
+    message = "chore: terraform lifecycle management automated commit"
+  }
+  file {
+    contents = "#include <vector>\n#include <cstring>\n"
+    filepath = "src/main.hpp"
+  }
+  file {
+    contents = "#include \"main.hpp\"\n\nint main(int argc, char *argv[])\n{\n\treturn 0;\n}\n"
+    filepath = "src/main.cpp"
+  }
+}
+```
+
+```terraform
 ## Bitbucket Server example usage
 
 # This provider whilst it is targetted at Github as it stands you *can* use it with Bitbucket server, see below example to make this work. The key is to replace the org with the relevant path as below:
