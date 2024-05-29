@@ -51,6 +51,12 @@ func resourceGitFiles() *schema.Resource {
 				ForceNew:    true,
 				Description: "Sets the organization in git the repository is in.",
 			},
+			"project": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "Sets the AzureDevOps Project where the repository is in. Only needed if using AzDO repos",
+			},
 			"force_new": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -89,6 +95,10 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 	org := d.Get("organization").(string)
 	branch := d.Get("branch").(string)
 	repo := d.Get("repository").(string)
+	azdoProject := ""
+	if v, ok := d.GetOk("project"); ok {
+		azdoProject = v.(string)
+	}
 
 	checkout_dir := path.Join(os.TempDir(), unique.UniqueId())
 	if err := os.MkdirAll(checkout_dir, 0755); err != nil {
@@ -102,7 +112,7 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
 
-	_, status, err := commands.checkout(checkout_dir, repo, branch)
+	_, status, err := commands.checkout(checkout_dir, repo, branch, azdoProject)
 	switch status {
 	case Exist:
 		tflog.Info(ctx, "Branch exists for deletion")
@@ -158,6 +168,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 	org := d.Get("organization").(string)
 	branch := d.Get("branch").(string)
 	repo := d.Get("repository").(string)
+	azdoProject := ""
+	if v, ok := d.GetOk("project"); ok {
+		azdoProject = v.(string)
+	}
 
 	checkout_dir := path.Join(os.TempDir(), unique.UniqueId())
 	if err := os.MkdirAll(checkout_dir, 0755); err != nil {
@@ -171,7 +185,7 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
 
-	_, status, err := commands.checkout(checkout_dir, repo, branch)
+	_, status, err := commands.checkout(checkout_dir, repo, branch, azdoProject)
 	switch status {
 	case NotExist:
 		tflog.Warn(ctx, fmt.Sprintf("Branch not found for update: %s", branch))
@@ -285,6 +299,10 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{
 	org := d.Get("organization").(string)
 	branch := d.Get("branch").(string)
 	repo := d.Get("repository").(string)
+	azdoProject := ""
+	if v, ok := d.GetOk("project"); ok {
+		azdoProject = v.(string)
+	}
 
 	checkout_dir := path.Join(os.TempDir(), unique.UniqueId())
 	if err := os.MkdirAll(checkout_dir, 0755); err != nil {
@@ -298,7 +316,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
 
-	_, status, err := commands.checkout(checkout_dir, repo, branch)
+	_, status, err := commands.checkout(checkout_dir, repo, branch, azdoProject)
 	switch status {
 	case NotExist:
 		tflog.Warn(ctx, fmt.Sprintf("Branch not found for create: %s", branch))
@@ -360,6 +378,10 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 	org := d.Get("organization").(string)
 	branch := d.Get("branch").(string)
 	repo := d.Get("repository").(string)
+	azdoProject := ""
+	if v, ok := d.GetOk("project"); ok {
+		azdoProject = v.(string)
+	}
 
 	checkout_dir := path.Join(os.TempDir(), unique.UniqueId())
 	if err := os.MkdirAll(checkout_dir, 0755); err != nil {
@@ -373,7 +395,7 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	commands := NewGitCommands(meta.(*Owner).name, meta.(*Owner).token, org, hostname)
 
-	rev, status, err := commands.checkout(checkout_dir, repo, branch)
+	rev, status, err := commands.checkout(checkout_dir, repo, branch, azdoProject)
 	switch status {
 	case Unknown:
 		if err != nil {
