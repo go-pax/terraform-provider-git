@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/terraform-plugin-log v0.9.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.34.0
 	github.com/shurcooL/githubv4 v0.0.0-20230305132112-efb623903184
-	golang.org/x/oauth2 v0.17.0
+	golang.org/x/oauth2 v0.20.0
 )
 
 require (
